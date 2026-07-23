@@ -1,0 +1,10 @@
+# ardt.yaml — the whole repo's tooling config (see ardt's ardt.example.yaml).
+
+project:
+  name: ardt_ros2_demo
+
+tasks:
+  ros:
+    distro: jazzy
+  doc:
+    source_dir: ardt_ros2_demo/doc # docs live in the metapackage

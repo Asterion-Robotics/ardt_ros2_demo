@@ -1,0 +1,6 @@
+# The most recent counter steps, newest first.
+
+# Maximum number of steps to return; 0 means everything retained.
+uint32 depth 0
+---
+StepEvent[] steps  # newest first, at most `depth` entries
