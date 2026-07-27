@@ -19,8 +19,8 @@ setup(
     # collects nothing here and exits 5 — a red `ardt test` with no tests run.
     tests_require=["pytest"],
     zip_safe=True,
-    maintainer="Asterion Robotics",
-    maintainer_email="dev@asterion-robotics.com",
+    maintainer="Thibault Poignonec",
+    maintainer_email="t.poignonec@asterion-robotics.com",
     description="Python demo package: a counter node over the demo interfaces",
     license="Apache-2.0",
     entry_points={

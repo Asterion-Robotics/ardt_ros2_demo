@@ -4,7 +4,7 @@
   <name>ardt_ros2_demo</name>
   <version>0.0.0</version>
   <description>Aggregator package of the ardt ROS 2 demo; also hosts the repo documentation</description>
-  <maintainer email="dev@asterion-robotics.com">Asterion Robotics</maintainer>
+  <maintainer email="t.poignonec@asterion-robotics.com">Thibault Poignonec</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

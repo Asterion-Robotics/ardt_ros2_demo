@@ -4,7 +4,7 @@
   <name>ardt_ros2_demo_pkg_2</name>
   <version>0.0.0</version>
   <description>C++ demo package: the counter as an exported ament library</description>
-  <maintainer email="dev@asterion-robotics.com">Asterion Robotics</maintainer>
+  <maintainer email="t.poignonec@asterion-robotics.com">Thibault Poignonec</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
