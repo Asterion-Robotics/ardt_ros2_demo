@@ -1,3 +1,6 @@
+# Copyright 2026 Asterion Robotics
+# SPDX-License-Identifier: Apache-2.0
+
 """The demo counter node.
 
 Publishes :class:`~ardt_demo_ros2_msgs.msg.DemoStatus` on ``~/status`` once a

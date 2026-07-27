@@ -1,3 +1,6 @@
+// Copyright 2026 Asterion Robotics
+// SPDX-License-Identifier: Apache-2.0
+
 #ifndef ARDT_ROS2_DEMO_PKG_2__COUNTER_HPP_
 #define ARDT_ROS2_DEMO_PKG_2__COUNTER_HPP_
 

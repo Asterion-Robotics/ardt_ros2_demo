@@ -1,3 +1,6 @@
+# Copyright 2026 Asterion Robotics
+# SPDX-License-Identifier: Apache-2.0
+
 """Pure counting logic — importable without ROS.
 
 The node in :mod:`.demo_node` is a thin shell over these functions, so the

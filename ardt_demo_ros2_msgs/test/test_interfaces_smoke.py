@@ -1,3 +1,6 @@
+# Copyright 2026 Asterion Robotics
+# SPDX-License-Identifier: Apache-2.0
+
 """Smoke: the generated interfaces import and expose their declared surface.
 
 Runs under `colcon test` (the package must be built and sourced).

@@ -1,3 +1,6 @@
+// Copyright 2026 Asterion Robotics
+// SPDX-License-Identifier: Apache-2.0
+
 // Smoke: the counter advances, clamps and rejects bad steps.
 #include <gtest/gtest.h>
 

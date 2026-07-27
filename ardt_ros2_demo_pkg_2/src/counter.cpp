@@ -1,3 +1,6 @@
+// Copyright 2026 Asterion Robotics
+// SPDX-License-Identifier: Apache-2.0
+
 #include "ardt_ros2_demo_pkg_2/counter.hpp"
 
 #include <algorithm>
