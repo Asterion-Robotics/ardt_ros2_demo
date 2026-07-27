@@ -1,0 +1,34 @@
+# ardt.yaml — the whole repo's tooling config (see ardt's ardt.example.yaml).
+
+project:
+  name: ardt_ros2_demo
+
+# Which ardt the pipelines install inside the containers they build. Pinned on
+# purpose: unpinned, this demo tracks ardt's HEAD and turns red whenever the
+# toolchain moves, which is exactly the failure mode the `ardt:` section exists
+# to prevent. CI overrides it with `--arg ardt_source=…` when it wants a
+# specific checkout instead.
+ardt:
+  version: v0.0.3
+
+tasks:
+  ros:
+    distro: jazzy
+  doc:
+    source_dir: ardt_ros2_demo/doc # docs live in the aggregator package
+
+# ardt-doc-pipelines — `ardt pipe run docs-ci` builds the versioned site into public/.
+pipelines:
+  docs_ci:
+    versions:
+      tags: "v*" # every release tag becomes a version of the site
+      # No `branches:` — historical branches are resolved with `git rev-parse`,
+      # which does not see `origin/main` in a tag checkout, so a branch entry
+      # would silently drop out of exactly the runs that publish. Tags only.
+
+  # ardt-ros-pipelines — `ardt pipe run ros-ci` runs deps/build/test as image
+  # stages. The demo never pushes an image, so only the build knobs are set.
+  ros_ci:
+    builder: ros:jazzy-ros-base
+    base_image: ros:jazzy-ros-base
+    install_base: /opt/ros/demo

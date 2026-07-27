@@ -1,0 +1,11 @@
+# Bounce the counter between `low` and `high` for a number of cycles.
+
+int64 low        # lower bound of the swing
+int64 high       # upper bound of the swing
+uint32 cycles 1  # full low->high->low round trips
+---
+uint32 completed_cycles  # round trips finished before the goal ended
+bool interrupted         # true when the goal was canceled mid-cycle
+---
+int64 current    # value after the latest step
+uint32 cycle     # the round trip currently running (1-based)

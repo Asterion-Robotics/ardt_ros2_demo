@@ -1,0 +1,5 @@
+# Reset the counter to zero and clear its history.
+# The request is deliberately empty.
+
+---
+int64 previous  # counter value before the reset

@@ -1,0 +1,127 @@
+# The demo's CI is deliberately thin: it installs ardt and calls two pipelines.
+# Everything else — the rosdep/colcon/sphinx/doxygen commands, the container
+# recipes, the site layout — lives in ardt, versioned with the `ardt:` pin in
+# ardt.yaml. That is the point of the repo: a robotics CI that is four steps of
+# YAML, and the same commands a developer runs locally.
+name: ci
+
+on:
+  push:
+    branches: [main]
+    # Required, not optional: once `branches:` is set, tag pushes stop
+    # triggering this workflow unless `tags:` is set too. Publishing hangs off
+    # these, so a missing line here is a silently dead release.
+    tags: ["v*"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # One place to move the toolchain. Keep it equal to `ardt.version` in
+  # ardt.yaml: this pin is the ardt that *drives* the pipelines, that one is the
+  # ardt installed *inside* the containers they build. Drift between them means
+  # CI orchestrates one version and runs another.
+  ARDT_REF: v0.0.3
+  ARDT_GIT: git+https://github.com/Asterion-Robotics/ardt.git
+
+jobs:
+  # `ros-ci` is deps + build + test as stages of an image build: a red test is a
+  # failed `docker build`. No colcon here, no ROS on the runner — Dagger drives
+  # the whole thing over the runner's docker socket.
+  ros-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ardt
+        run: |
+          uv tool install "ardt-core @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=packages/ardt-core" \
+            --with "ardt-ros-tasks @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-ros-tasks" \
+            --with "ardt-doc-tasks @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-doc-tasks" \
+            --with "ardt-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=packages/ardt-pipelines" \
+            --with "ardt-ros-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-ros-pipelines" \
+            --with "ardt-doc-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-doc-pipelines"
+          uv tool dir --bin >> "$GITHUB_PATH"
+
+      # No `--publish`: the demo has no registry to push to, so the runtime
+      # image is built (a broken runtime stage still fails the run) and dropped.
+      - name: Build, test and package
+        run: ardt pipe run ros-ci
+
+      # The pipeline exports the JUnit XMLs here whether the run is green or
+      # red; `if: always()` is what makes a failure inspectable.
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-reports
+          path: pipeline-reports/
+          if-no-files-found: ignore
+
+  # `docs-ci` builds the working tree plus every `v*` tag into public/, each with
+  # its own docs and its own conf.py, and writes the versions.json the theme's
+  # flyout reads. `tasks.doc.strict` defaults to true, so a sphinx warning in any
+  # version fails the job.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Mandatory here, not just nice-to-have: historical versions are built
+          # by cloning this checkout and checking out each tag, so the objects
+          # and tags have to be present locally.
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ardt
+        run: |
+          uv tool install "ardt-core @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=packages/ardt-core" \
+            --with "ardt-doc-tasks @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-doc-tasks" \
+            --with "ardt-ros-tasks @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-ros-tasks" \
+            --with "ardt-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=packages/ardt-pipelines" \
+            --with "ardt-ros-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-ros-pipelines" \
+            --with "ardt-doc-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-doc-pipelines"
+          uv tool dir --bin >> "$GITHUB_PATH"
+
+      - name: Build the versioned site
+        run: ardt pipe run docs-ci
+
+      # Not plain upload-artifact: deploy-pages only consumes the `github-pages`
+      # tarball this action produces. Uploaded on every event, so a pull request
+      # gets a downloadable site to review; only tags go on to deploy it.
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  # Publishing is tag-only: main and pull requests build the site and stop.
+  deploy-docs:
+    needs: docs
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write # create the deployment
+      id-token: write # deploy-pages authenticates over OIDC
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Deliberately not the workflow-level `cancel-in-progress: true` group: a
+    # half-cancelled deployment is worse than a queued one.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
