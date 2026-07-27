@@ -32,6 +32,10 @@ jobs:
   # the whole thing over the runner's docker socket.
   ros-ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write # the test reporter publishes a check run
+      pull-requests: write # ...and a summary comment on the PR
     steps:
       - uses: actions/checkout@v4
 
@@ -64,6 +68,20 @@ jobs:
           name: pipeline-reports
           path: pipeline-reports/
           if-no-files-found: ignore
+
+      # Turns those XMLs into a check run and a PR comment, so a red test is
+      # readable without downloading the artifact. `always()` again: tests are
+      # RUN layers, so a failure fails the step above — which is exactly when
+      # the report is worth having.
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: pipeline-reports/**/*.xml
+          # A run that finds no XML at all means the pipeline's staging step
+          # regressed, not that the workspace has no tests. Fail loudly rather
+          # than report "0 tests" in green.
+          action_fail_on_inconclusive: true
 
   # `docs-ci` builds the working tree plus every `v*` tag into public/, each with
   # its own docs and its own conf.py, and writes the versions.json the theme's
