@@ -8,3 +8,10 @@ tasks:
     distro: jazzy
   doc:
     source_dir: ardt_ros2_demo/doc # docs live in the metapackage
+
+# ardt-doc-pipelines — `ardt pipe run docs-ci` builds the versioned site into public/.
+pipelines:
+  docs_ci:
+    versions:
+      tags: "v*" # every release tag becomes a version of the site
+      # branches: [main] # main predates the docs, so it is left out of this demo
