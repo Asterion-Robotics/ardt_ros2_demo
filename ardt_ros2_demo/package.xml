@@ -3,7 +3,7 @@
 <package format="3">
   <name>ardt_ros2_demo</name>
   <version>0.0.0</version>
-  <description>Metapackage of the ardt ROS 2 demo; also hosts the repo documentation</description>
+  <description>Aggregator package of the ardt ROS 2 demo; also hosts the repo documentation</description>
   <maintainer email="dev@asterion-robotics.com">Asterion Robotics</maintainer>
   <license>Apache-2.0</license>
 
@@ -14,7 +14,10 @@
   <exec_depend>ardt_ros2_demo_pkg_2</exec_depend>
 
   <export>
-    <metapackage/>
+    <!-- No <metapackage/>: that marker is catkin's (ROS 1). ament ignores it,
+         while catkin_pkg then demands a buildtool_depend on catkin and warns on
+         every build. In ROS 2 an aggregator is just this: exec_depends, no
+         targets. -->
     <build_type>ament_cmake</build_type>
   </export>
 </package>
