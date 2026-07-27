@@ -9,6 +9,13 @@ not listed here are internal and may change without notice.
 This reference is generated from the interface definitions at every
 documentation build and always matches the sources of this version.
 
+.. note::
+
+   ``demo_counter`` implements the ``DemoStatus`` topic and the ``SetCounter``
+   service; the remaining definitions exist so this page exercises every shape
+   the ``ros2-interfaces`` directive renders — defaults, constants, arrays of
+   package-local messages, and an empty request.
+
 .. toctree::
    :maxdepth: 2
 

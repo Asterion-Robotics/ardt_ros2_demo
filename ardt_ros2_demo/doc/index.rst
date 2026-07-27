@@ -2,7 +2,7 @@ ardt_ros2_demo
 ==============
 
 The demo repository for the `ardt <https://github.com/Asterion-Robotics/ardt>`_
-tooling: three small ROS 2 packages exercising the build, test and doc tasks.
+tooling: four small ROS 2 packages exercising the build, test and doc tasks.
 
 .. mermaid::
 

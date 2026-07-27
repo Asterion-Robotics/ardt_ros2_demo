@@ -3,6 +3,6 @@
 # The value to count to.
 int64 target
 ---
-int64 final_count
+int64 final_count  # value the counter stopped at
 ---
 int64 current  # value after the latest step

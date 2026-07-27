@@ -3,5 +3,5 @@
 # The value the counter jumps to.
 int64 target
 ---
-bool success
+bool success    # false when the target was rejected
 int64 previous  # counter value before the call
