@@ -1,3 +1,6 @@
+# Copyright 2026 Asterion Robotics
+# SPDX-License-Identifier: Apache-2.0
+
 from setuptools import find_packages, setup
 
 package_name = "ardt_ros2_demo_pkg_1"
@@ -11,6 +14,10 @@ setup(
         ("share/" + package_name, ["package.xml"]),
     ],
     install_requires=["setuptools"],
+    # Not decoration: colcon picks its Python test runner from this list. Without
+    # a `pytest` test dependency it falls back to `python -m unittest`, which
+    # collects nothing here and exits 5 — a red `ardt test` with no tests run.
+    tests_require=["pytest"],
     zip_safe=True,
     maintainer="Asterion Robotics",
     maintainer_email="dev@asterion-robotics.com",
