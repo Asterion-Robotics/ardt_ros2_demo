@@ -24,7 +24,13 @@ env:
   # ardt installed *inside* the containers they build. Drift between them means
   # CI orchestrates one version and runs another.
   ARDT_REF: v0.0.3
-  ARDT_GIT: git+https://github.com/Asterion-Robotics/ardt.git
+  # Read straight out of the environment by install.sh. `ardt-dev` is in its
+  # default set but belongs on a workstation, not a runner; the doc modules are
+  # not in it and docs-ci needs them, so the list is spelled out.
+  ARDT_MODULES: >-
+    ardt-core ardt-pipelines
+    ardt-ros-tasks ardt-ros-pipelines
+    ardt-doc-tasks ardt-doc-pipelines
 
 jobs:
   # `ros-ci` is deps + build + test as stages of an image build: a red test is a
@@ -44,15 +50,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      # The same one-liner the README gives a developer, ARDT_REF/ARDT_MODULES
+      # from the env above. PATH is set before the script runs, not after: it
+      # ends with its own `command -v ardt` check and would fail the step.
       - name: Install ardt
         run: |
-          uv tool install "ardt-core @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=packages/ardt-core" \
-            --with "ardt-ros-tasks @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-ros-tasks" \
-            --with "ardt-doc-tasks @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-doc-tasks" \
-            --with "ardt-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=packages/ardt-pipelines" \
-            --with "ardt-ros-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-ros-pipelines" \
-            --with "ardt-doc-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-doc-pipelines"
           uv tool dir --bin >> "$GITHUB_PATH"
+          export PATH="$(uv tool dir --bin):$PATH"
+          curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
 
       # No `--publish`: the demo has no registry to push to, so the runtime
       # image is built (a broken runtime stage still fails the run) and dropped.
@@ -104,13 +109,9 @@ jobs:
 
       - name: Install ardt
         run: |
-          uv tool install "ardt-core @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=packages/ardt-core" \
-            --with "ardt-doc-tasks @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-doc-tasks" \
-            --with "ardt-ros-tasks @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-ros-tasks" \
-            --with "ardt-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=packages/ardt-pipelines" \
-            --with "ardt-ros-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-ros-pipelines" \
-            --with "ardt-doc-pipelines @ ${ARDT_GIT}@${ARDT_REF}#subdirectory=plugins/ardt-doc-pipelines"
           uv tool dir --bin >> "$GITHUB_PATH"
+          export PATH="$(uv tool dir --bin):$PATH"
+          curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
 
       - name: Build the versioned site
         run: ardt pipe run docs-ci
