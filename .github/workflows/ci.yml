@@ -23,7 +23,7 @@ env:
   # ardt.yaml: this pin is the ardt that *drives* the pipelines, that one is the
   # ardt installed *inside* the containers they build. Drift between them means
   # CI orchestrates one version and runs another.
-  ARDT_REF: v0.0.3
+  ARDT_REF: main
   # Read straight out of the environment by install.sh. `ardt-dev` is in its
   # default set but belongs on a workstation, not a runner; the doc modules are
   # not in it and docs-ci needs them, so the list is spelled out.
