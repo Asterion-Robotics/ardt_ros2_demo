@@ -3,13 +3,13 @@
 project:
   name: ardt_ros2_demo
 
-# The ONE ardt pin, read by both planes: the CI configs install the driving
-# ardt at this ref (they parse it out of this file), and the pipelines install
-# the same ref inside the containers they build. The recipe/task contract
-# (e.g. the /ws workspace layout) only holds when the two match — pinning
-# v0.0.3 while the driving ardt rendered v0.1.x recipes is exactly how it
-# breaks. CI overrides it with `--arg ardt_source=…` when it wants a specific
-# checkout instead.
+# The ONE ardt pin, read by both planes: install.sh defaults to this ref when
+# run from the repo root (so CI installs the driving ardt at it, no parsing of
+# its own), and the pipelines install the same ref inside the containers they
+# build. The recipe/task contract (e.g. the /ws workspace layout) only holds
+# when the two match — pinning v0.0.3 while the driving ardt rendered v0.1.x
+# recipes is exactly how it breaks. CI overrides it with
+# `--arg ardt_source=…` when it wants a specific checkout instead.
 ardt:
   version: v0.1.2
 

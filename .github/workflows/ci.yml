@@ -19,11 +19,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # ARDT_REF is deliberately NOT set here: the Install ardt steps read it from
-  # `ardt.version` in ardt.yaml, so the ardt that *drives* the pipelines and
-  # the ardt installed *inside* the containers they build cannot drift (the
-  # recipe/task contract, e.g. the /ws workspace layout, only holds when the
-  # two match).
+  # ARDT_REF is deliberately NOT set: install.sh runs from the repo root and
+  # defaults to the `ardt.version` pin in ardt.yaml, so the ardt that *drives*
+  # the pipelines and the ardt installed *inside* the containers they build
+  # cannot drift (the recipe/task contract, e.g. the /ws workspace layout,
+  # only holds when the two match).
   # ARDT_MODULES is read straight out of the environment by install.sh. `ardt-dev` is in its
   # default set but belongs on a workstation, not a runner; the doc modules are
   # not in it and docs-ci needs them, so the list is spelled out.
@@ -56,8 +56,6 @@ jobs:
       # ends with its own `command -v ardt` check and would fail the step.
       - name: Install ardt
         run: |
-          export ARDT_REF="$(sed -n '/^ardt:/,/^[^[:space:]]/{s/^[[:space:]]*version:[[:space:]]*//p}' ardt.yaml | head -1)"
-          echo "installing ardt ${ARDT_REF} (pin read from ardt.yaml)"
           uv tool dir --bin >> "$GITHUB_PATH"
           export PATH="$(uv tool dir --bin):$PATH"
           curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
@@ -117,8 +115,6 @@ jobs:
 
       - name: Install ardt
         run: |
-          export ARDT_REF="$(sed -n '/^ardt:/,/^[^[:space:]]/{s/^[[:space:]]*version:[[:space:]]*//p}' ardt.yaml | head -1)"
-          echo "installing ardt ${ARDT_REF} (pin read from ardt.yaml)"
           uv tool dir --bin >> "$GITHUB_PATH"
           export PATH="$(uv tool dir --bin):$PATH"
           curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
