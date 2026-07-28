@@ -3,13 +3,15 @@
 project:
   name: ardt_ros2_demo
 
-# Which ardt the pipelines install inside the containers they build. Pinned on
-# purpose: unpinned, this demo tracks ardt's HEAD and turns red whenever the
-# toolchain moves, which is exactly the failure mode the `ardt:` section exists
-# to prevent. CI overrides it with `--arg ardt_source=…` when it wants a
-# specific checkout instead.
+# The ONE ardt pin, read by both planes: the CI configs install the driving
+# ardt at this ref (they parse it out of this file), and the pipelines install
+# the same ref inside the containers they build. The recipe/task contract
+# (e.g. the /ws workspace layout) only holds when the two match — pinning
+# v0.0.3 while the driving ardt rendered v0.1.x recipes is exactly how it
+# breaks. CI overrides it with `--arg ardt_source=…` when it wants a specific
+# checkout instead.
 ardt:
-  version: v0.0.3
+  version: v0.1.2
 
 tasks:
   ros:
