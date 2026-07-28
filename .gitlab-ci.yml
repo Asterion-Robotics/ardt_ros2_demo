@@ -30,12 +30,12 @@ workflow:
     - if: $CI_COMMIT_TAG =~ /^v/
 
 variables:
-  # One place to move the toolchain. Keep it equal to `ardt.version` in
-  # ardt.yaml: this pin is the ardt that *drives* the pipelines, that one is
-  # the ardt installed *inside* the containers they build. Drift between them
-  # means CI orchestrates one version and runs another.
-  ARDT_REF: main
-  # Read straight out of the environment by install.sh. `ardt-dev` is in its
+  # ARDT_REF is deliberately NOT set here: .ardt's before_script reads it from
+  # `ardt.version` in ardt.yaml, so the ardt that *drives* the pipelines and
+  # the ardt installed *inside* the containers they build cannot drift (the
+  # recipe/task contract, e.g. the /ws workspace layout, only holds when the
+  # two match).
+  # ARDT_MODULES is read straight out of the environment by install.sh. `ardt-dev` is in its
   # default set but belongs on a workstation, not a runner; the doc modules
   # are not in it and docs-ci needs them, so the list is spelled out.
   ARDT_MODULES: >-
@@ -68,6 +68,11 @@ variables:
     # land in ~/.local/bin.
     - curl -LsSf https://astral.sh/uv/install.sh | sh
     - export PATH="$HOME/.local/bin:$PATH"
+    # The one ardt pin, read from ardt.yaml (see the variables: note). Plain
+    # sed with no ${...} in it, so GitLab's inline-script expansion can't
+    # mangle it (the base-images trap).
+    - export ARDT_REF="$(sed -n '/^ardt:/,/^[^[:space:]]/{s/^[[:space:]]*version:[[:space:]]*//p}' ardt.yaml | head -1)"
+    - echo "installing ardt ${ARDT_REF} (pin read from ardt.yaml)"
     - curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
 
 # `ros-ci` is deps + build + test as stages of an image build: a red test is

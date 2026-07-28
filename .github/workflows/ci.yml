@@ -19,12 +19,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # One place to move the toolchain. Keep it equal to `ardt.version` in
-  # ardt.yaml: this pin is the ardt that *drives* the pipelines, that one is the
-  # ardt installed *inside* the containers they build. Drift between them means
-  # CI orchestrates one version and runs another.
-  ARDT_REF: main
-  # Read straight out of the environment by install.sh. `ardt-dev` is in its
+  # ARDT_REF is deliberately NOT set here: the Install ardt steps read it from
+  # `ardt.version` in ardt.yaml, so the ardt that *drives* the pipelines and
+  # the ardt installed *inside* the containers they build cannot drift (the
+  # recipe/task contract, e.g. the /ws workspace layout, only holds when the
+  # two match).
+  # ARDT_MODULES is read straight out of the environment by install.sh. `ardt-dev` is in its
   # default set but belongs on a workstation, not a runner; the doc modules are
   # not in it and docs-ci needs them, so the list is spelled out.
   ARDT_MODULES: >-
@@ -56,6 +56,8 @@ jobs:
       # ends with its own `command -v ardt` check and would fail the step.
       - name: Install ardt
         run: |
+          export ARDT_REF="$(sed -n '/^ardt:/,/^[^[:space:]]/{s/^[[:space:]]*version:[[:space:]]*//p}' ardt.yaml | head -1)"
+          echo "installing ardt ${ARDT_REF} (pin read from ardt.yaml)"
           uv tool dir --bin >> "$GITHUB_PATH"
           export PATH="$(uv tool dir --bin):$PATH"
           curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
@@ -115,6 +117,8 @@ jobs:
 
       - name: Install ardt
         run: |
+          export ARDT_REF="$(sed -n '/^ardt:/,/^[^[:space:]]/{s/^[[:space:]]*version:[[:space:]]*//p}' ardt.yaml | head -1)"
+          echo "installing ardt ${ARDT_REF} (pin read from ardt.yaml)"
           uv tool dir --bin >> "$GITHUB_PATH"
           export PATH="$(uv tool dir --bin):$PATH"
           curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
