@@ -1,0 +1,128 @@
+# ardt_ros2_demo GitLab CI — a mirror of .github/workflows/ci.yml.
+#
+# STATUS: written from the GitHub workflow, never run on a real runner yet;
+# treat the first pipeline as a debugging session, not as a regression. The
+# GitHub workflow stays the reference — keep the two in step.
+#
+# Same deliberately-thin shape: install ardt, call two pipelines. The
+# rosdep/colcon/sphinx/doxygen commands, the container recipes and the site
+# layout live in ardt, pinned by `ardt.version` in ardt.yaml.
+#
+# The one real difference from the GitHub side: both pipelines drive
+# containers through Dagger over a Docker daemon. GitHub runners have one on
+# the VM for free; here it is the docker:dind service, which requires a
+# privileged runner (the gitlab.com shared-runner default).
+
+stages:
+  - build
+  - deploy
+
+# Branch pushes, MRs (deduplicated: an open MR suppresses the branch
+# pipeline), and v* tags. Wider than the GitHub `branches: [main]` trigger on
+# purpose — any branch push runs, which is what you want while shaking this
+# file out on a real runner.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG =~ /^v/
+
+variables:
+  # One place to move the toolchain. Keep it equal to `ardt.version` in
+  # ardt.yaml: this pin is the ardt that *drives* the pipelines, that one is
+  # the ardt installed *inside* the containers they build. Drift between them
+  # means CI orchestrates one version and runs another.
+  ARDT_REF: main
+  # Read straight out of the environment by install.sh. `ardt-dev` is in its
+  # default set but belongs on a workstation, not a runner; the doc modules
+  # are not in it and docs-ci needs them, so the list is spelled out.
+  ARDT_MODULES: >-
+    ardt-core ardt-pipelines
+    ardt-ros-tasks ardt-ros-pipelines
+    ardt-doc-tasks ardt-doc-pipelines
+  # uv resolves this instead of a setup-uv step; it downloads a standalone
+  # CPython (musl build on this alpine image) on first use.
+  UV_PYTHON: "3.12"
+  # The documented client<->dind TLS handshake: dind generates certs into a
+  # volume both containers share. See
+  # https://docs.gitlab.com/ci/docker/using_docker_build/
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_VERIFY: "1"
+  DOCKER_CERT_PATH: "/certs/client"
+
+# Shared by both pipeline jobs: docker client + dind daemon + uv + ardt.
+# If uv's musl python ever misbehaves on the alpine cli image, the fallback
+# is a debian python image plus a static docker client — note it here.
+.ardt:
+  image: docker:27-cli
+  services:
+    - docker:27-dind
+  interruptible: true # the GitHub `cancel-in-progress` equivalent
+  before_script:
+    - apk add --no-cache bash curl git
+    # PATH before install.sh, not after: the script ends with its own
+    # `command -v ardt` check and would fail. uv and uv-installed tools both
+    # land in ~/.local/bin.
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - export PATH="$HOME/.local/bin:$PATH"
+    - curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
+
+# `ros-ci` is deps + build + test as stages of an image build: a red test is
+# a failed image build. No colcon here, no ROS on the runner — Dagger drives
+# the whole thing against the dind daemon. No `--publish`: the demo has no
+# registry to push to, so the runtime image is built (a broken runtime stage
+# still fails the run) and dropped.
+ros-ci:
+  extends: .ardt
+  stage: build
+  script:
+    - ardt pipe run ros-ci
+  # `when: always` is what makes a red run inspectable — tests are RUN
+  # layers, so a failure fails the script, which is exactly when the XMLs
+  # are worth having. The junit report is the native replacement for the
+  # publish-unit-test-result action: MR Test widget + pipeline Tests tab.
+  artifacts:
+    when: always
+    paths:
+      - pipeline-reports/
+    reports:
+      junit: pipeline-reports/**/*.xml
+
+# `docs-ci` builds the working tree plus every v* tag into public/, each with
+# its own docs, and writes the versions.json the theme's flyout reads.
+# `tasks.doc.strict` defaults to true, so a sphinx warning in any version
+# fails the job. Runs on every pipeline; only the pages job below publishes.
+docs:
+  extends: .ardt
+  stage: build
+  variables:
+    # Full clone, mandatory here: historical versions are built by cloning
+    # this checkout and checking out each tag, so the objects and tags have
+    # to be present locally (the runner's default shallow fetch drops both).
+    GIT_DEPTH: "0"
+    GIT_FETCH_EXTRA_FLAGS: --prune --tags
+  script:
+    - ardt pipe run docs-ci
+  artifacts:
+    paths:
+      - public
+
+# Publishing is tag-only: branches and MRs build the site (downloadable from
+# the docs job's artifact) and stop. The magic job name `pages` is what
+# triggers the GitLab Pages deploy of the public/ artifact — the whole
+# OIDC/deploy-pages dance on the GitHub side collapses into this.
+pages:
+  stage: deploy
+  image: alpine:3.20
+  needs:
+    - docs
+  script:
+    - echo "publishing public/ from the docs job"
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
