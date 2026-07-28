@@ -42,6 +42,7 @@ jobs:
       contents: read
       checks: write # the test reporter publishes a check run
       pull-requests: write # ...and a summary comment on the PR
+      packages: write # tag runs push the runtime image to ghcr.io
     steps:
       - uses: actions/checkout@v4
 
@@ -59,10 +60,15 @@ jobs:
           export PATH="$(uv tool dir --bin):$PATH"
           curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
 
-      # No `--publish`: the demo has no registry to push to, so the runtime
-      # image is built (a broken runtime stage still fails the run) and dropped.
+      # `--publish` on tag runs only: ghcr.io/<owner>/<repo>:<version>, with
+      # ardt reading GITHUB_TOKEN for the registry login (the ci.py
+      # normalization). Branch and PR runs still build the runtime image (a
+      # broken runtime stage fails the run) and drop it — off-tag versions
+      # (1.2.3.dev4+g<sha>) are not valid image tags anyway, by design.
       - name: Build, test and package
-        run: ardt pipe run ros-ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ardt pipe run ros-ci ${{ startsWith(github.ref, 'refs/tags/v') && '--publish' || '' }}
 
       # The pipeline exports the JUnit XMLs here whether the run is green or
       # red; `if: always()` is what makes a failure inspectable.

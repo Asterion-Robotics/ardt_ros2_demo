@@ -72,14 +72,28 @@ variables:
 
 # `ros-ci` is deps + build + test as stages of an image build: a red test is
 # a failed image build. No colcon here, no ROS on the runner — Dagger drives
-# the whole thing against the dind daemon. No `--publish`: the demo has no
-# registry to push to, so the runtime image is built (a broken runtime stage
-# still fails the run) and dropped.
+# the whole thing against the dind daemon.
+#
+# `--publish` on tag pipelines only: the image lands at
+# ${CI_REGISTRY}/${CI_PROJECT_PATH}:<version>, with ardt reading the job's
+# CI_REGISTRY_USER/PASSWORD itself (the ci.py normalization — no docker login
+# here). Branch and MR runs still build the runtime image (a broken runtime
+# stage fails the run) and drop it — off-tag versions (1.2.3.dev4+g<sha>) are
+# not valid image tags anyway, by design. The flag travels through a
+# rules-variable, not `${CI_COMMIT_TAG:+…}` in the script line: see the
+# base-images repo for the inline-bashism trap that avoids.
 ros-ci:
   extends: .ardt
   stage: build
+  variables:
+    PUBLISH_FLAG: ""
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+      variables:
+        PUBLISH_FLAG: "--publish"
+    - when: on_success # every other pipeline the workflow rules admit
   script:
-    - ardt pipe run ros-ci
+    - ardt pipe run ros-ci $PUBLISH_FLAG
   # `when: always` is what makes a red run inspectable — tests are RUN
   # layers, so a failure fails the script, which is exactly when the XMLs
   # are worth having. The junit report is the native replacement for the
