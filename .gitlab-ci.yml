@@ -1,9 +1,5 @@
 # ardt_ros2_demo GitLab CI — a mirror of .github/workflows/ci.yml.
 #
-# STATUS: written from the GitHub workflow, never run on a real runner yet;
-# treat the first pipeline as a debugging session, not as a regression. The
-# GitHub workflow stays the reference — keep the two in step.
-#
 # Same deliberately-thin shape: install ardt, call two pipelines. The
 # rosdep/colcon/sphinx/doxygen commands, the container recipes and the site
 # layout live in ardt, pinned by `ardt.version` in ardt.yaml.
@@ -14,15 +10,21 @@
 # privileged runner (the gitlab.com shared-runner default).
 
 stages:
+  - sync
   - build
   - deploy
 
 # Branch pushes, MRs (deduplicated: an open MR suppresses the branch
-# pipeline), and v* tags. Wider than the GitHub `branches: [main]` trigger on
-# purpose — any branch push runs, which is what you want while shaking this
-# file out on a real runner.
+# pipeline), v* tags, and schedules. Wider than the GitHub `branches: [main]`
+# trigger on purpose — any branch push runs, which is what you want while
+# shaking this file out on a real runner.
+#
+# Schedules exist for exactly one job: sync-github below. Note that schedules
+# also set $CI_COMMIT_BRANCH, so the branch rule alone would admit them —
+# which is why the build jobs carry an explicit schedule guard.
 workflow:
   rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
@@ -88,6 +90,8 @@ ros-ci:
   variables:
     PUBLISH_FLAG: ""
   rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" # schedules are sync-github only
+      when: never
     - if: $CI_COMMIT_TAG =~ /^v/
       variables:
         PUBLISH_FLAG: "--publish"
@@ -112,6 +116,10 @@ ros-ci:
 docs:
   extends: .ardt
   stage: build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" # schedules are sync-github only
+      when: never
+    - when: on_success # otherwise: every pipeline, same as no rules at all
   variables:
     # Full clone, mandatory here: historical versions are built by cloning
     # this checkout and checking out each tag, so the objects and tags have
@@ -140,3 +148,29 @@ pages:
       - public
   rules:
     - if: $CI_COMMIT_TAG =~ /^v/
+
+# Poor-man's pull mirroring (the built-in one is a Premium feature): a
+# scheduled pipeline clones the GitHub source of truth and pushes every
+# branch and tag into this project. Runs alone; every other job carries a
+# schedule guard. GitHub is public, so the clone needs no credentials.
+#
+# SYNC_TOKEN is a project access token (Maintainer role, write_repository
+# scope) stored as a masked+protected CI variable. Because the push uses a
+# real token (not the job's CI_JOB_TOKEN), a synced main/tag triggers a
+# normal pipeline here, so GitLab CI and Pages follow GitHub automatically.
+#
+# The `+` refspecs force-update, and --prune deletes branches gone upstream:
+# correct for a mirror, but it means this copy is read-only. Anything
+# committed only on GitLab gets clobbered on the next tick. GitHub's hidden
+# refs/pull/* refs are deliberately not synced.
+sync-github:
+  stage: sync
+  image: alpine/git:latest
+  variables:
+    GIT_STRATEGY: none # no checkout of the GitLab copy; we clone GitHub
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - git clone --bare https://github.com/Asterion-Robotics/ardt_ros2_demo.git source
+    - cd source
+    - git push --prune "https://oauth2:${SYNC_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "+refs/heads/*:refs/heads/*" "+refs/tags/*:refs/tags/*"
