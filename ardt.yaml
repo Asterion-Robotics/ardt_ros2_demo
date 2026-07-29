@@ -12,6 +12,14 @@ project:
 # `--arg ardt_source=…` when it wants a specific checkout instead.
 ardt:
   version: v0.3.0
+  # install.sh's default bundle is contextual: core + pipelines + the ROS 2
+  # plugins everywhere, plus the devcontainer ones (ardt-devcontainers,
+  # ardt-ros-dev) off CI. The doc modules are not in it, and `docs-ci` needs
+  # them, so this repo opts in. Declared here rather than as ARDT_MODULES in
+  # the CI files: that variable *replaces* the bundle outright, which meant
+  # spelling out the whole list twice and losing the devcontainer modules on a
+  # workstation.
+  install_extras: [ardt-doc-tasks, ardt-doc-pipelines]
 
 tasks:
   ros:

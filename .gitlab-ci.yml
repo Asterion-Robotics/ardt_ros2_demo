@@ -32,18 +32,11 @@ workflow:
     - if: $CI_COMMIT_TAG =~ /^v/
 
 variables:
-  # ARDT_REF is deliberately NOT set: install.sh runs from the repo root and
-  # defaults to the `ardt.version` pin in ardt.yaml, so the ardt that *drives*
-  # the pipelines and the ardt installed *inside* the containers they build
-  # cannot drift (the recipe/task contract, e.g. the /ws workspace layout,
-  # only holds when the two match).
-  # ARDT_MODULES is read straight out of the environment by install.sh. `ardt-dev` is in its
-  # default set but belongs on a workstation, not a runner; the doc modules
-  # are not in it and docs-ci needs them, so the list is spelled out.
-  ARDT_MODULES: >-
-    ardt-core ardt-pipelines
-    ardt-ros-tasks ardt-ros-pipelines
-    ardt-doc-tasks ardt-doc-pipelines
+  # Neither ARDT_REF nor ARDT_MODULES is set here, deliberately: both would
+  # override ardt.yaml, and the point is that one file decides the toolchain.
+  # install.sh runs from the repo root, so it takes the ref from `ardt.version`
+  # and the module set from the default bundle plus `ardt.install_extras`.
+  #
   # uv resolves this instead of a setup-uv step; it downloads a standalone
   # CPython (musl build on this alpine image) on first use.
   UV_PYTHON: "3.12"

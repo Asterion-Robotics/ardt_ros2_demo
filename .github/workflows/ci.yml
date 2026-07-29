@@ -18,19 +18,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # ARDT_REF is deliberately NOT set: install.sh runs from the repo root and
-  # defaults to the `ardt.version` pin in ardt.yaml, so the ardt that *drives*
-  # the pipelines and the ardt installed *inside* the containers they build
-  # cannot drift (the recipe/task contract, e.g. the /ws workspace layout,
-  # only holds when the two match).
-  # ARDT_MODULES is read straight out of the environment by install.sh. `ardt-dev` is in its
-  # default set but belongs on a workstation, not a runner; the doc modules are
-  # not in it and docs-ci needs them, so the list is spelled out.
-  ARDT_MODULES: >-
-    ardt-core ardt-pipelines
-    ardt-ros-tasks ardt-ros-pipelines
-    ardt-doc-tasks ardt-doc-pipelines
+# Neither ARDT_REF nor ARDT_MODULES is set here, deliberately: both would
+# override ardt.yaml, and the point is that one file decides the toolchain.
+# install.sh runs from the repo root, so it takes the ref from `ardt.version`
+# and the module set from the default bundle plus `ardt.install_extras`.
 
 jobs:
   # `ros-ci` is deps + build + test as stages of an image build: a red test is a
@@ -51,8 +42,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      # The same one-liner the README gives a developer, ARDT_REF/ARDT_MODULES
-      # from the env above. PATH is set before the script runs, not after: it
+      # The same one-liner the README gives a developer, with the ref and the
+      # module set coming from ardt.yaml (see the note above `jobs`). PATH is
+      # set before the script runs, not after: it
       # ends with its own `command -v ardt` check and would fail the step.
       - name: Install ardt
         run: |
