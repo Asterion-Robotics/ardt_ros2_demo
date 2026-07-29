@@ -165,7 +165,13 @@ pages:
 # refs/pull/* refs are deliberately not synced.
 sync-github:
   stage: sync
-  image: alpine/git:latest
+  # The bare image name does not work here: alpine/git sets ENTRYPOINT
+  # ["git"], and the docker executor feeds the job script through the
+  # entrypoint, turning it into `git sh -c ...`. Blanking it restores a
+  # plain shell.
+  image:
+    name: alpine/git:latest
+    entrypoint: [""]
   variables:
     GIT_STRATEGY: none # no checkout of the GitLab copy; we clone GitHub
   rules:
