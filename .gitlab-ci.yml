@@ -180,7 +180,7 @@ sync-github:
     # Fail loud if the variable is missing or filtered out (e.g. a
     # protected variable on an unprotected ref) — an empty token would
     # otherwise surface as an opaque HTTP 401 from the push.
-    - test -n "$SYNC_TOKEN" || { echo "SYNC_TOKEN is empty: variable missing or not injected (protected-ref mismatch?)"; exit 1; }
+    - 'test -n "$SYNC_TOKEN" || { echo "SYNC_TOKEN is empty: variable missing or not injected (protected-ref mismatch?)"; exit 1; }'
     - git clone --bare https://github.com/Asterion-Robotics/ardt_ros2_demo.git source
     - cd source
     - git push --prune "https://oauth2:${SYNC_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "+refs/heads/*:refs/heads/*" "+refs/tags/*:refs/tags/*"
