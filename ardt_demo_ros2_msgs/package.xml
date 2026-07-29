@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>ardt_demo_ros2_msgs</name>
-  <version>0.0.0</version>
+  <version>0.2.0</version>
   <description>Interfaces of the ardt ROS 2 demo: three msgs, three srvs, two actions</description>
   <maintainer email="t.poignonec@asterion-robotics.com">Thibault Poignonec</maintainer>
   <license>Apache-2.0</license>
