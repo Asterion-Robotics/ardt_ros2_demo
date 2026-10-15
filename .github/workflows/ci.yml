@@ -25,8 +25,9 @@ concurrency:
 
 jobs:
   # `ros-ci` is deps + build + test as stages of an image build: a red test is a
-  # failed `docker build`. No colcon here, no ROS on the runner — Dagger drives
-  # the whole thing over the runner's docker socket.
+  # failed `docker build`. No colcon here, no ROS on the runner — docker buildx
+  # drives the whole thing over the runner's docker socket, with a builder it
+  # creates on first use.
   ros-ci:
     runs-on: ubuntu-latest
     permissions:

@@ -4,10 +4,12 @@
 # rosdep/colcon/sphinx/doxygen commands, the container recipes and the site
 # layout live in ardt, pinned by `ardt.version` in ardt.yaml.
 #
-# The one real difference from the GitHub side: both pipelines drive
-# containers through Dagger over a Docker daemon. GitHub runners have one on
+# The one real difference from the GitHub side: both pipelines drive image
+# builds through docker buildx over a Docker daemon. GitHub runners have one on
 # the VM for free; here it is the docker:dind service, which requires a
-# privileged runner (the gitlab.com shared-runner default).
+# privileged runner (the gitlab.com shared-runner default). A daemon per job
+# means an empty builder per job; the pipelines' registry cache is what keeps
+# a cold job cheap.
 
 stages:
   - sync
@@ -66,8 +68,8 @@ variables:
     - curl -LsSf https://raw.githubusercontent.com/Asterion-Robotics/ardt/main/install.sh | bash
 
 # `ros-ci` is deps + build + test as stages of an image build: a red test is
-# a failed image build. No colcon here, no ROS on the runner — Dagger drives
-# the whole thing against the dind daemon.
+# a failed image build. No colcon here, no ROS on the runner — docker buildx
+# drives the whole thing against the dind daemon.
 #
 # `--publish` on tag pipelines only: the image lands at
 # ${CI_REGISTRY}/${CI_PROJECT_PATH}:<version>, with ardt reading the job's
