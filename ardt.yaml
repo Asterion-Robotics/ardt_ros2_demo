@@ -11,9 +11,7 @@ project:
 # recipes is exactly how it breaks. CI overrides it with
 # `--arg ardt_source=…` when it wants a specific checkout instead.
 ardt:
-  # the commit that will be v0.6.0 (the pipeline plane on docker buildx); moves
-  # to the tag once it is cut
-  version: 057b1c24b977e2145700bcf256adeeb765ae0e9f
+  version: v0.6.0
   # install.sh's default bundle is contextual: core + pipelines + the ROS 2
   # plugins everywhere, plus the devcontainer ones (ardt-devcontainers,
   # ardt-ros-dev) off CI. The doc modules are not in it, and `docs-ci` needs
